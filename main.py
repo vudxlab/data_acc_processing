@@ -9,12 +9,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         default="processed_segments",
-        help="Directory for saved decimated .npy segments and plots (default: processed_segments)",
+        help="Directory for generated plots (default: processed_segments)",
     )
-    parser.add_argument("--skip-segments", action="store_true", help="Skip saving decimated .npy segments")
     parser.add_argument("--skip-plots", action="store_true", help="Skip saving visualization PNGs")
-    parser.add_argument("--segment-length", type=int, default=100, help="Segment length in seconds for saved .npy files")
-    parser.add_argument("--plot-length", type=int, default=50, help="Segment length in seconds for plot PNGs")
+    parser.add_argument("--segment-length", type=int, default=100, help="Segment length in seconds before plotting")
+    parser.add_argument("--plot-length", type=int, default=50, help="Length in seconds for each plotted sub-segment")
     return parser.parse_args()
 
 
@@ -23,7 +22,6 @@ def main() -> None:
     run_pipeline(
         data_dir=args.data_dir,
         output_dir=args.output_dir,
-        save_segments=not args.skip_segments,
         save_plots=not args.skip_plots,
         segment_length_seconds=args.segment_length,
         plot_segment_seconds=args.plot_length,

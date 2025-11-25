@@ -12,7 +12,6 @@ def run_pipeline(
     *,
     data_dir: str = "Data",
     output_dir: str = "processed_segments",
-    save_segments: bool = True,
     save_plots: bool = True,
     segment_length_seconds: int = 100,
     plot_segment_seconds: int = 50,
@@ -25,7 +24,6 @@ def run_pipeline(
     cfg = config or PipelineConfig(
         data_dir=data_dir,
         output_dir=output_dir,
-        save_segments=save_segments,
         save_plots=save_plots,
         segment_length_seconds=segment_length_seconds,
         plot_segment_seconds=plot_segment_seconds,
@@ -38,25 +36,8 @@ def run_pipeline(
         print(f"No data files found under '{cfg.data_dir}'.")
         return
 
-    processed_any_segments = False
-
     for file_path in data_files:
         _process_file(file_path, cfg)
-        processed_any_segments = processed_any_segments or cfg.save_segments
-
-    if cfg.save_plots:
-        if processed_any_segments or Path(cfg.output_dir).exists():
-            visualize_segments(
-                base_dir=cfg.output_dir,
-                fs_original=cfg.fs,
-                decimation_factor=cfg.decimation_factor,
-                plot_length_seconds=cfg.plot_segment_seconds,
-            )
-        else:
-            print(
-                "Skipping plot generation because no processed segments were created. "
-                "Enable segment saving or ensure processed segments already exist."
-            )
 
     print("\n--- All files processed. ---")
 
@@ -71,13 +52,21 @@ def _process_file(file_path: Path, cfg: PipelineConfig) -> None:
 
     file_basename = file_path.stem
 
-    if cfg.save_segments:
-        process_loaded_data(
-            data_array,
-            sensor_labels,
-            file_basename,
+    segments_by_sensor = process_loaded_data(
+        data_array,
+        sensor_labels,
+        file_basename,
+        fs=cfg.fs,
+        decimation_factor=cfg.decimation_factor,
+        segment_length_seconds=cfg.segment_length_seconds,
+    )
+
+    if cfg.save_plots:
+        visualize_segments(
+            segments_by_sensor,
+            file_basename=file_basename,
             output_dir=cfg.output_dir,
-            fs=cfg.fs,
+            fs_original=cfg.fs,
             decimation_factor=cfg.decimation_factor,
-            segment_length_seconds=cfg.segment_length_seconds,
+            plot_length_seconds=cfg.plot_segment_seconds,
         )

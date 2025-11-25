@@ -7,7 +7,6 @@ class PipelineConfig:
 
     data_dir: str = "Data"
     output_dir: str = "processed_segments"
-    save_segments: bool = True
     save_plots: bool = True
     segment_length_seconds: int = 100
     plot_segment_seconds: int = 50

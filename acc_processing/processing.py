@@ -1,13 +1,10 @@
 """Signal processing utilities."""
 
-from typing import List, Sequence
+from typing import Dict, List, Sequence
 
 import numpy as np
 import pandas as pd
 from scipy.signal import butter, decimate, lfilter
-
-from .data_io import ensure_output_dir
-
 
 def _filter_and_decimate(series: Sequence[float], *, fs: int, decimation_factor: int) -> np.ndarray:
     """Apply a high-pass Butterworth filter and decimate the series."""
@@ -29,18 +26,18 @@ def process_loaded_data(
     sensor_labels: Sequence[str],
     file_basename: str,
     *,
-    output_dir: str,
     fs: int,
     decimation_factor: int,
     segment_length_seconds: int,
-) -> None:
-    """Filter, decimate, and segment data before saving as ``.npy`` files."""
+) -> Dict[str, List[np.ndarray]]:
+    """Filter, decimate, and segment data for downstream visualization."""
     df = pd.DataFrame(data_array, columns=sensor_labels)
 
     print(f"\nProcessing {file_basename} with {len(sensor_labels)} sensors...")
 
     decimated_fs = fs / decimation_factor
     segment_length_points = int(segment_length_seconds * decimated_fs)
+    segments_by_sensor: Dict[str, List[np.ndarray]] = {}
 
     for sensor_col in df.columns:
         print(f"  Processing {sensor_col}...")
@@ -51,9 +48,7 @@ def process_loaded_data(
             print(f"    Not enough data to create a {segment_length_seconds}-second segment.")
             continue
 
-        sensor_dir = ensure_output_dir(output_dir, file_basename, sensor_col)
+        segments_by_sensor[sensor_col] = segments
+        print(f"    Prepared {len(segments)} segments for visualization.")
 
-        for idx, segment in enumerate(segments, start=1):
-            np.save(sensor_dir / f"segment_{idx}.npy", segment)
-
-        print(f"    Saved {len(segments)} segments to '{sensor_dir}'")
+    return segments_by_sensor
