@@ -97,6 +97,22 @@ def load_data_from_tdms_file(file_path: Path) -> SensorData:
             numeric_data = np.asarray(data).flatten()
             if numeric_data.size == 0:
                 continue
+
+            if np.issubdtype(numeric_data.dtype, np.datetime64):
+                # Convert datetime channels to seconds from epoch to avoid dtype promotion errors
+                numeric_data = numeric_data.astype("datetime64[ns]").astype(np.int64) / 1e9
+            elif np.issubdtype(numeric_data.dtype, np.number):
+                numeric_data = numeric_data.astype(np.float64)
+            else:
+                try:
+                    numeric_data = numeric_data.astype(np.float64)
+                except (TypeError, ValueError):
+                    print(
+                        f"Warning: Skipping non-numeric channel {channel.name} in {file_path} "
+                        f"(dtype={numeric_data.dtype})."
+                    )
+                    continue
+
             channel_data.append(numeric_data)
             channel_names.append(f"{group.name}_{channel.name}" if group.name else channel.name)
 
