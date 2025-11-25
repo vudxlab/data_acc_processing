@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.io
@@ -174,51 +173,6 @@ def process_loaded_data(
         print(f"    Saved {len(segments)} segments to '{sensor_dir}'")
 
 
-def visualize_loaded_data(
-    data_array: np.ndarray,
-    sensor_labels: Sequence[str],
-    file_basename: str,
-    *,
-    output_dir: str = "results",
-    fs: int = FS,
-    decimation_factor: int = DECIMATION_FACTOR,
-    segment_length_seconds: int = 50,
-) -> None:
-    """Filter, decimate, and visualize sensor data as PNG files."""
-    df = pd.DataFrame(data_array, columns=sensor_labels)
-
-    print(f"\nVisualizing {file_basename} with {len(sensor_labels)} sensors...")
-
-    decimated_fs = fs / decimation_factor
-    segment_length_points = int(segment_length_seconds * decimated_fs)
-
-    for sensor_col in df.columns:
-        print(f"  Plotting {sensor_col}...")
-        decimated_data = _filter_and_decimate(df[sensor_col], fs=fs, decimation_factor=decimation_factor)
-        segments = _segment_array(decimated_data, segment_length_points)
-
-        if not segments:
-            print(f"    Not enough data to create a {segment_length_seconds}-second segment.")
-            continue
-
-        sensor_dir = Path(output_dir) / file_basename / sensor_col
-        sensor_dir.mkdir(parents=True, exist_ok=True)
-
-        for idx, segment in enumerate(segments, start=1):
-            time_axis = np.arange(segment.size) / decimated_fs
-            fig, ax = plt.subplots(figsize=(15, 4))
-            ax.plot(time_axis, segment)
-            ax.set_xlabel("Time (s)")
-            ax.set_ylabel("Amplitude")
-            ax.grid(True)
-
-            png_path = sensor_dir / f"chunk_{idx}.png"
-            plt.savefig(png_path)
-            plt.close(fig)
-
-        print(f"    Saved {len(segments)} plot(s) to '{sensor_dir}'")
-
-
 def run_pipeline(
     data_dir: str = "Data",
     *,
@@ -234,6 +188,8 @@ def run_pipeline(
     if not data_files:
         print(f"No data files found under '{data_dir}'.")
         return
+
+    processed_any_segments = False
 
     for file_path in data_files:
         print(f"--- Starting file: {file_path} ---")
@@ -255,16 +211,23 @@ def run_pipeline(
                 decimation_factor=decimation_factor,
                 segment_length_seconds=segment_length_seconds,
             )
+            processed_any_segments = True
 
-        if save_plots:
-            visualize_loaded_data(
-                data_array,
-                sensor_labels,
-                file_basename,
-                output_dir="results",
-                fs=fs,
+    if save_plots:
+        if processed_any_segments or Path("processed_segments").exists():
+            # Import locally to avoid a hard dependency when only loading data.
+            from visualize_segments import visualize_segments
+
+            visualize_segments(
+                base_dir="processed_segments",
+                fs_original=fs,
                 decimation_factor=decimation_factor,
-                segment_length_seconds=plot_segment_seconds,
+                plot_length_seconds=plot_segment_seconds,
+            )
+        else:
+            print(
+                "Skipping plot generation because no processed segments were created. "
+                "Enable segment saving or ensure 'processed_segments' already exists."
             )
 
     print("\n--- All files processed. ---")
