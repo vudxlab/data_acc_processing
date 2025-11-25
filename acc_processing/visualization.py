@@ -77,7 +77,7 @@ def _visualize_sensor_segments(
                 ax.set_xlabel("Time (s)")
                 ax.set_ylabel("Amplitude")
                 ax.grid(True)
-                fig.subplots_adjust(left=0.08, right=0.98, bottom=0.12)
+                fig.subplots_adjust(left=0.09, right=0.98, bottom=0.16)
 
                 png_path = sensor_dir / f"segment_{idx}_{part_name}.png"
                 plt.savefig(png_path, dpi=150)
