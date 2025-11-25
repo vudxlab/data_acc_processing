@@ -54,7 +54,7 @@ def _visualize_sensor_segments(
     points_per_plot: int,
     sensor: str,
 ) -> None:
-    base_font_size = plt.rcParams.get("font.size", 10) * 2
+    base_font_size = plt.rcParams.get("font.size", 10) * 1.5
 
     for idx, segment in enumerate(segments, start=1):
         if len(segment) < 2 * points_per_plot:
@@ -77,7 +77,7 @@ def _visualize_sensor_segments(
                 ax.set_xlabel("Time (s)")
                 ax.set_ylabel("Amplitude")
                 ax.grid(True)
-                fig.subplots_adjust(left=0.06, right=0.98)
+                fig.subplots_adjust(left=0.08, right=0.98, bottom=0.12)
 
                 png_path = sensor_dir / f"segment_{idx}_{part_name}.png"
                 plt.savefig(png_path, dpi=150)
